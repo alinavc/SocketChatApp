@@ -3,20 +3,40 @@
 #Import libraries
 import socket
 import sys
+import select
 
 # Define the function for creation of a client
 def create_client(svr_ip, svr_port):
     cli_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cli_socket.connect((svr_ip, svr_port))
+    
+    bool connect = True
+    cli_socket.setblocking(False)
+    
+   # Communicate with the server
+    while connect:
+        read, _, _ = select.select([sys.stdin, cli_socket], [], [])
+        
+        #read through all select ports to see if it is receiving on input or incoming messages
+        
+        for word in read:
+            if word is sys.stdin:
+                #accept user in
+                message = input("Awaiting Command: ")
+                
 
-    # Communicate with the server
-    message = input("Awaiting Command: ")
-    cli_socket.send(message.encode())
-
-    response = cli_socket.recv(1024)
-    if response:
-        print(f"Received from server: {response.decode()}")
-   # cli_socket.close()
+                cli_socket.send(message.encode())
+            
+            elif word is cli_socket:
+                #Accept data from the server
+                try:
+                    response = cli_socket.recv(1024)
+                    if response:
+                        print(f"{response.decode()}")
+                except BlockingIOError:
+                    #handle error
+      
+   cli_socket.close()
 
 # Define the main function
 def main():

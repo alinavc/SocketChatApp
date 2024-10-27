@@ -15,7 +15,9 @@ def create_server(port):
         # set socket to unblocking
         svr_socket.setblocking(False)
         connectedSockets=[svr_socket] #sockets for server to monitor (NO MAX)
+        registeredClients = [] #store the socket of registered clients (MAX 10)
         clientInfo=[] #usernames of connected clients (MAX 10)
+        
 
     # Opening a loop for clients to connect. Cliens may leave or connect at any time.
         while True:
@@ -33,23 +35,65 @@ def create_server(port):
                                                 response=handleCmd(currSocket,data.decode(),clientInfo)
                                                 print("Received msg: ", {data.decode()})
                                                 #response= "msg received"
-                                                cli_socket.send(response.encode())
+                                                #cli_socket.send(response.encode())
+                                                currSocket.send(response.encode())
                                 except BlockingIOError:
                                         continue #call next socket
 
 #        cli_socket.close()
-def handleCmd(currSocket, msg,clientInfo):
+def handleCmd(currSocket, msg,clientInfo, registeredClients):
         inputCmd = msg.split()[0]
         if inputCmd == "JOIN":
-                response=("edit join handler")
+            if (len(clientInfo) < 10):
+            #register the username and socket in the lists
+                clientInfo.append(msg.split()[1])
+                registedClients.append(currSocket)
+                broadcast(f"{msg.split[1]} has joined!")
+            else:
+                response = "Chat room is full"
+            #response=("edit join handler")
         elif inputCmd == "LIST":
-                response=("edit list handler")
+            if (currentSocket in registeredClients):
+                for name in clientInfo:
+                    response += " " + name
+                #response=("edit list handler")
         elif inputCmd == "MESG":
-                response=("edit mesg handler")
+            if (currentSocket in registeredClients):
+                senderIndex = registeredClients.index(currentSocket)
+                try:
+                    receiverIndex = clientInfo.index(msg.split()[1])
+                except ValueError:
+                    return "{msg.split()[1]} Not found"
+                receiver = registeredClients[receiverIndex]
+                #Remove the command and user
+                words = msg.split()
+                message = " ".join(words[2:])
+                
+                response = clientInfo[senderIndex] + ": " + message
+                receiver.send(response.encode())
+                #response=("edit mesg handler")
         elif inputCmd == "BCST":
-                response=("edit bcst handler")
+            if (currentSocket in registeredClients):
+                senderIndex = registeredClients.index(currentSocket)
+                sender = clientInfo[senderIndex]
+                
+                #Remove the command
+                words = msg.split()
+                message = " ".join(words[1:])
+                #response=("edit bcst handler")
+                response = ''
+                bcstMessage = sender + ": " + message
+                broadcast(f"{sender} is sending a broadcast!")
+                broadcast(f"{bcstMessage}")
         elif inputCmd == "QUIT":
-                response=("edit quit handler")
+            if (currentSocket in registeredClients):
+                index = registeredClients.index(currentSocket)
+                registeredClients.remove(currentSocket)
+                broadcast(f"{clientInfo[index]} has left!")
+                clientInfo.pop(index)
+                
+                
+                #response=("edit quit handler")
         else:
                 response="Unknown Message"
 
