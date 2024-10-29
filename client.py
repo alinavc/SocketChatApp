@@ -10,33 +10,28 @@ def create_client(svr_ip, svr_port):
     cli_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cli_socket.connect((svr_ip, svr_port))
     
-    bool connect = True
     cli_socket.setblocking(False)
-    
-   # Communicate with the server
-    while connect:
-        read, _, _ = select.select([sys.stdin, cli_socket], [], [])
-        
-        #read through all select ports to see if it is receiving on input or incoming messages
-        
+    #begin communication with the server
+    print("Enter JOIN followed by your username: ")
+    while True:
+        read,_,_ = select.select([sys.stdin, cli_socket],[],[])
+        #Read through all select ports to see if there is incoming keyboard input or messages
         for word in read:
             if word is sys.stdin:
-                #accept user in
-                message = input("Awaiting Command: ")
-                
-
+                #accept user input
+                message = input()
                 cli_socket.send(message.encode())
-            
             elif word is cli_socket:
-                #Accept data from the server
+                #accept server data
                 try:
                     response = cli_socket.recv(1024)
                     if response:
                         print(f"{response.decode()}")
                 except BlockingIOError:
-                    #handle error
-      
-   cli_socket.close()
+                    pass
+                    #error handling
+
+    cli_socket.close()
 
 # Define the main function
 def main():
