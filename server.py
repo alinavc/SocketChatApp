@@ -1,3 +1,9 @@
+# Group Members: (11-08-2024)
+
+# Alina Corpora | CSC138 Section 1
+# Mark Ures | CPE138 Section 1
+# Herman Melnyk | CPE138 Section 1
+
 # Server program to accept chat messages from clients to JOIN, LIST, MESG, BCST,QUIT
 # Sample usage: python3 server.py 8001
 

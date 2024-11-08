@@ -1,3 +1,9 @@
+# Group Members: (11-08-2024)
+
+# Alina Corpora | CSC138 Section 1
+# Mark Ures | CPE138 Section 1
+# Herman Melnyk | CPE138 Section 1
+
 # Client program to connect to server, create username, and send messages
 # Sample usage: python3 client.py ecs-coding3.csus.edu  8000
 #Import libraries
