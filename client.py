@@ -5,7 +5,8 @@
 # Herman Melnyk | CPE138 Section 1
 
 # Client program to connect to server, create username, and send messages
-# Sample usage: python3 client.py ecs-coding3.csus.edu  8000
+# Sample usage: python3 client.py ecs-coding3.csus.edu  8001
+
 #Import libraries
 import socket
 import sys

@@ -53,91 +53,109 @@ def create_server(port):
                                                 #response= "msg received"
                                                 #cli_socket.send(response.encode())
                                                 currSocket.send(response.encode())
+                                                if(response == "Leaving chat room"):
+                                                        connectedSockets.remove(currSocket)
+                                                        currSocket.close()
                                 except BlockingIOError:
                                         continue #call next socket
 
 #        cli_socket.close()
 def handleCmd(currentSocket, msg,clientInfo, registeredClients,allClients,addresses):
-	inputCmd = msg.split()[0]
-	response = ""
-	alreadyJoined=0
+        inputCmd = msg.split()[0]
+        response = ""
+        alreadyJoined=0
+        index = allClients.index(currentSocket)
+        address = addresses[index]
 	#check if user already registered and set flag
-	for i in registeredClients:
-		if(i==currentSocket):
-			alreadyJoined=1
+        for i in registeredClients:
+                if(i==currentSocket):
+                        alreadyJoined=1
 
-	if inputCmd == "JOIN":
-		if (len(clientInfo) < 10 and alreadyJoined ==0):
+        if inputCmd == "JOIN":
+                if (len(clientInfo) < 10 and alreadyJoined ==0):
             	#register the username and socket in the lists
-			clientInfo.append(msg.split()[1])
-			registeredClients.append(currentSocket)
+                        clientInfo.append(msg.split()[1])
+                        registeredClients.append(currentSocket)
                 	#output a broadcast to all connected to the server
-			broadcast(f"{msg.split()[1]} has joined!",allClients)
+                        broadcast(f"{msg.split()[1]} has joined!",allClients)
                 	#get address of current client
-			index = allClients.index(currentSocket)
-			address = addresses[index]
-			print(msg.split()[1] + " has joined. Connected VIA " + str(address))
-			response =" Connected to server!"
-		else:
+			#index = allClients.index(currentSocket)
+			
+                        print(msg.split()[1] + " has joined. Connected VIA " + str(address))
+                        response =" Connected to server!"
+                else:
                 #if there are 10 registered users do not add the new user to the list
-			if(len(clientInfo)>9):
-				response = "Chat room is full."
-			if(alreadyJoined==1):
-				response = "User already registered under different username."
+                        if(len(clientInfo)>9):
+                                print("User at "+ str(address)+ " attempted to join, but the chatroom is full")
+                                response = "Chat room is full."
+                        if(alreadyJoined==1):
+                                print("User at "+ str(address)+ " attempted to join, but is already registered")
+                                response = "User already registered under different username."
             #response=("edit join handler")
-	elif inputCmd == "LIST":
-            #Ensure the command is from a registered user
-		if (currentSocket in registeredClients):
-			for name in clientInfo:
-				response += "\n " + name
-		else:
-			response= "Unregistered user. Please join the chatroom with JOIN to begin."
-	elif inputCmd == "MESG":
-            #Ensure the command is from a registered user
-		if (currentSocket in registeredClients):
-			senderIndex = registeredClients.index(currentSocket)
-			try:
-				receiverIndex = clientInfo.index(msg.split()[1])
-			except ValueError:
-				return msg.split()[1]+" Not found"
-			receiver = registeredClients[receiverIndex]
+        elif inputCmd == "LIST":
+                #Ensure the command is from a registered user
+                if (currentSocket in registeredClients):
+                        print("User at "+ str(address)+ " requested a list of current users")
+                        for name in clientInfo:
+                                response += "\n " + name
+                else:
+                        print("User at "+ str(address)+ " attempted to request a LIST but is not registered")
+                        response= "Unregistered user. Please join the chatroom with JOIN to begin."
+        elif inputCmd == "MESG":
+                #Ensure the command is from a registered user
+                if (currentSocket in registeredClients):
+                        senderIndex = registeredClients.index(currentSocket)
+                        try:
+                                receiverIndex = clientInfo.index(msg.split()[1])
+                        except ValueError:
+                                print("User at "+ str(address)+ " sent a MESG to receiver: " + msg.split()[1] + " but this user was not found")
+                                return msg.split()[1]+" Not found"
+                        receiver = registeredClients[receiverIndex]
+                        receiverIndex = allClients.index(receiver)
+                        receiverAddress = addresses[receiverIndex]
                 	#Remove the command and user
-			words = msg.split()
-			message = " ".join(words[2:])
+                        words = msg.split()
+                        message = " ".join(words[2:])
                 
-			response = clientInfo[senderIndex] + ": " + message
-			receiver.send(response.encode())
-		else:
-			response="Unregistered user. Please join the chatroom with JOIN to begin."
-	elif inputCmd == "BCST":
-            #Ensure the command is from a registered user
-		if (currentSocket in registeredClients):
-                #get name of sender
-			senderIndex = registeredClients.index(currentSocket)
-			sender = clientInfo[senderIndex]
-                #Remove the command
-			words = msg.split()
-			message = " ".join(words[1:])
-			response = ''
-                #Generate and send message
-			bcstMessage = sender + ": " + message
-			broadcast(f"{sender} is sending a broadcast! \n", allClients)
-			broadcast(f"{bcstMessage}",allClients)
-		else:
-			response = "Unregistered user. Please join the chatroom with JOIN to begin."
-	elif inputCmd == "QUIT":
-            #Ensure the command is from a registered user
-		if (currentSocket in registeredClients):
-			index = registeredClients.index(currentSocket)
-			registeredClients.remove(currentSocket)
-			broadcast(f"{clientInfo[index]} has left!",allClients)
-			clientInfo.pop(index)
-		else:
-			response="Unregistered user. Please join the chatroom with JOIN to begin."
-	else:
-		response="Unknown Message"
+                        response = clientInfo[senderIndex] + ": " + message
+                        receiver.send(response.encode())
+                        print("User at "+ str(address)+ " sent a MESG to receiver: " + str(receiverAddress) + " MESG contents: " + message)
+                else:
+                        print("User at "+ str(address)+ " attempted to send a MESG but is not registered")
+                        response="Unregistered user. Please join the chatroom with JOIN to begin."
+        elif inputCmd == "BCST":
+                #Ensure the command is from a registered user
+                if (currentSocket in registeredClients):
+                        #get name of sender
+                        senderIndex = registeredClients.index(currentSocket)
+                        sender = clientInfo[senderIndex]
+                        broadcast(f"{sender} is sending a broadcast!", allClients)
+                        #Remove the command
+                        words = msg.split()
+                        message = " ".join(words[1:])
+                        response = ''
+                        #Generate and send message
+                        bcstMessage = sender + ": " + message
+                        broadcast(f"{bcstMessage}",allClients)
+                        print("User at "+ str(address)+ " sent a BCST with contents: " + message)
+                else:
+                        print("User at "+ str(address)+ " attempted to send a BCST but is not registered")
+                        response = "Unregistered user. Please join the chatroom with JOIN to begin."
+        elif inputCmd == "QUIT":
+                #Ensure the command is from a registered user
+                if (currentSocket in registeredClients):
+                        index = registeredClients.index(currentSocket)
+                        registeredClients.remove(currentSocket)
+                        broadcast(f"{clientInfo[index]} has left!",allClients)
+                        clientInfo.pop(index)
+                response = "Leaving chat room"
+                allClients.remove(currentSocket)
+	        #response="Unregistered user. Please join the chatroom with JOIN to begin."
+                print("User at "+ str(address)+ " has left")
+        else:
+                response="Unknown Message"
 
-	return response
+        return response
 
 # The main function
 def main():
